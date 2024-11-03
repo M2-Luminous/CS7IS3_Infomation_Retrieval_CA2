@@ -1,76 +1,101 @@
 package tcd.ie.luom;
 
+import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.List;
 
 public class App {
 
-    // Directly include the constants here
-    public static final String PARSED_DOCUMENT_LOCATION = "parsed-documents/fr94_docs/"; // Matches Fr94Parser
+    // Constants for dataset location
     public static final String DATASET_LOCATION = "dataset/fr94/";
 
-    public static void main(String[] args) throws IOException {
-        
-        // Create the base directory for parsed documents if it does not exist
-        File baseDir = new File(PARSED_DOCUMENT_LOCATION);
-        baseDir.mkdirs();
+    public static void main(String[] args) {
+        try {
+            // Load and preprocess the documents
+            List<Document> documents = loadFR94Docs(DATASET_LOCATION);
 
-        // List all files in the dataset directory
-        File[] file = new File(DATASET_LOCATION).listFiles();
-        
-        // Check if directory exists to avoid NullPointerException
-        if (file == null) {
-            System.err.println("Dataset directory not found: " + DATASET_LOCATION);
-            return;
+            // Output success message and basic statistics
+            if (documents.isEmpty()) {
+                System.err.println("No documents were loaded. Please check the dataset path.");
+            } else {
+                System.out.println("Dataset successfully loaded and preprocessed.");
+                System.out.println("Total Documents Loaded: " + documents.size());
+                System.out.println("Average Text Length: " + calculateAverageTextLength(documents));
+            }
+
+        } catch (IOException e) {
+            System.err.println("Error loading dataset: " + e.getMessage());
+            e.printStackTrace();
         }
-        
-        ArrayList<String> files1 = new ArrayList<>();
-        
-        // Add all files from each subdirectory in 'dataset/fr94/'
-        for (File files : file) {
-            if (files.isDirectory()) {
-                System.out.println("Directory: " + files.getPath());
-                for (File f : files.listFiles()) {
-                    files1.add(f.getAbsolutePath());
+    }
+
+    // Method to load and preprocess Federal Register documents
+    public static List<Document> loadFR94Docs(String pathToFedRegister) throws IOException {
+        List<Document> fedRegisterDocList = new ArrayList<>();
+        System.out.println("Loading FR94 ...");
+
+        File[] directories = new File(pathToFedRegister).listFiles(File::isDirectory);
+        if (directories == null) {
+            throw new IOException("Dataset directory not found or is empty: " + pathToFedRegister);
+        }
+
+        for (File directory : directories) {
+            File[] files = directory.listFiles();
+            if (files == null) continue;
+
+            for (File file : files) {
+                org.jsoup.nodes.Document d = Jsoup.parse(file, null, "");
+
+                Elements documents = d.select("DOC");
+
+                for (Element document : documents) {
+
+                    // Remove unwanted tags from the document
+                    document.select("ADDRESS").remove();
+                    document.select("SIGNER").remove();
+                    document.select("SIGNJOB").remove();
+                    document.select("BILLING").remove();
+                    document.select("FRFILING").remove();
+                    document.select("DATE").remove();
+                    document.select("RINDOCK").remove();
+
+                    // Extract relevant fields
+                    String docno = document.select("DOCNO").text();
+                    String text = document.select("TEXT").text();
+                    String title = document.select("DOCTITLE").text();
+
+                    // Add processed document to list
+                    fedRegisterDocList.add(createLuceneDocument(docno, text, title));
                 }
             }
         }
+        System.out.println("Loading FR94 Done!");
+        return fedRegisterDocList;
+    }
 
-        // Parse each file and write content to a new document in the parsed directory
-        for (String f : files1) {
-            try {
-                System.out.println("Processing file: " + f);
-                
-                File input = new File(f);
-                Document doc = Jsoup.parse(input, "UTF-8", "");
+    // Helper method to create a Lucene Document from parsed fields
+    private static Document createLuceneDocument(String docno, String text, String title) {
+        Document doc = new Document();
+        doc.add(new StringField("docno", docno, Field.Store.YES));
+        doc.add(new TextField("text", text, Field.Store.YES));
+        doc.add(new TextField("headline", title, Field.Store.YES));
+        return doc;
+    }
 
-                // Remove 'docid' elements
-                doc.select("docid").remove();
-
-                // Select 'doc' elements for processing
-                Elements docs = doc.select("doc");
-
-                for (Element e : docs) {
-                    // Extract the 'Docno' tag content
-                    String DocNo = e.getElementsByTag("Docno").text();
-
-                    // Create a new file for each document based on 'Docno'
-                    File result = new File(PARSED_DOCUMENT_LOCATION + DocNo);
-                    PrintWriter writer = new PrintWriter(result, "UTF-8");
-                    writer.println(e.text());
-                    writer.close();
-                }
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+    // Helper method to calculate average text length
+    private static double calculateAverageTextLength(List<Document> docs) {
+        return docs.stream()
+                .mapToInt(doc -> doc.get("text").length())
+                .average()
+                .orElse(0.0);
     }
 }
