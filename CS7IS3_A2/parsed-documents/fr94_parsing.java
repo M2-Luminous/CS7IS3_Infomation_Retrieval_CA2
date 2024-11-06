@@ -16,6 +16,9 @@ public class fr94_parsing {
     public static final String PARSED_DOCUMENT_LOCATION = "parsed-documents/fr94_docs/"; // Matches Fr94Parser
     public static final String DATASET_LOCATION = "dataset/fr94/";
 
+    public static final String PARSED_DOCUMENT_LOCATION_FBIS = "parsed-documents/fbis_docs/"; // Matches Fr94Parser
+    public static final String DATASET_FBIS = "dataset/fbis/";
+
     public static void main(String[] args) throws IOException {
 
         // Create the base directory for parsed documents if it does not exist
@@ -72,5 +75,58 @@ public class fr94_parsing {
                 e.printStackTrace();
             }
         }
+
+        // Parse fbis document
+        parseFbis();
+    }
+
+    public static void parseFbis() throws IOException{
+        File baseDir_fbis = new File(PARSED_DOCUMENT_LOCATION_FBIS);
+        baseDir_fbis.mkdirs();
+
+        // List all files in the fbis dataset directory
+        File[] fbis_files = new File(DATASET_FBIS).listFiles();
+        
+        // Check if directory exists to avoid NullPointerException
+        if (fbis_files == null) {
+            System.err.println("Dataset directory for fbis not found: " + DATASET_FBIS);
+            return;
+        }
+        
+        // Add all files from 'dataset/fbis/'
+        for (File fbis_file : fbis_files) {
+            try {
+                // Skip readme files
+                if (fbis_file.getName().contains("read")) {
+                    continue;
+                }
+
+                System.out.println("Processing file: " + fbis_file);
+                
+                File parsed_file = new File(fbis_file.getAbsolutePath());
+                Document doc = Jsoup.parse(fbis_file, "UTF-8", "");
+
+                // Remove 'docid' elements
+                doc.select("docid").remove();
+
+                // Select 'doc' elements for processing
+                Elements docs = doc.select("doc");
+
+                for (Element e : docs) {
+                    // Extract the 'Docno' tag content
+                    String DocNo = e.getElementsByTag("Docno").text();
+
+                    // Create a new file for each document based on 'Docno'
+                    File result = new File(PARSED_DOCUMENT_LOCATION_FBIS + DocNo);
+                    PrintWriter writer = new PrintWriter(result, "UTF-8");
+                    writer.println(e.text());
+                    writer.close();
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
+
