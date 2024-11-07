@@ -1,1 +1,5 @@
-tcd/ie/luom/App.class
+tcd/ie/luom/FR94Loader.class
+tcd/ie/luom/DatasetLoader.class
+tcd/ie/luom/IndexProgram.class
+tcd/ie/luom/FBISLoader.class
+tcd/ie/luom/LATimesLoader.class
