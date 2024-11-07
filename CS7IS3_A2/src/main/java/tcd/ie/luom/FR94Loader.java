@@ -13,11 +13,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FR94Loader {
+public class FR94Loader implements DatasetLoader {
 
     public static final String DATASET_LOCATION = "dataset/fr94/";
 
     // Method to load and preprocess Federal Register documents
+    @Override
     public List<Document> load(String pathToFedRegister) throws IOException {
         List<Document> fedRegisterDocList = new ArrayList<>();
         System.out.println("Loading FR94 ...");
