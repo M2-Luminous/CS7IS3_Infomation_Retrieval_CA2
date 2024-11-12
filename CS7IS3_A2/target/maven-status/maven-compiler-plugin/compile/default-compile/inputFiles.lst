@@ -1,4 +1,9 @@
-/gpwork/CS7IS3_A2/src/main/java/tcd/ie/luom/FBISLoader.java
-/gpwork/CS7IS3_A2/src/main/java/tcd/ie/luom/IndexProgram.java
-/gpwork/CS7IS3_A2/src/main/java/tcd/ie/luom/FR94Loader.java
-/gpwork/CS7IS3_A2/src/main/java/tcd/ie/luom/LATimesLoader.java
+/opt/change/CS7IS3_Infomation_Retrieval_CA2/CS7IS3_A2/src/main/java/tcd/ie/luom/FBISLoader.java
+/opt/change/CS7IS3_Infomation_Retrieval_CA2/CS7IS3_A2/src/main/java/tcd/ie/luom/TopicsParser/TopicsWrapper.java
+/opt/change/CS7IS3_Infomation_Retrieval_CA2/CS7IS3_A2/src/main/java/tcd/ie/luom/FTLoader.java
+/opt/change/CS7IS3_Infomation_Retrieval_CA2/CS7IS3_A2/src/main/java/tcd/ie/luom/IndexProgram.java
+/opt/change/CS7IS3_Infomation_Retrieval_CA2/CS7IS3_A2/src/main/java/tcd/ie/luom/FR94Loader.java
+/opt/change/CS7IS3_Infomation_Retrieval_CA2/CS7IS3_A2/src/main/java/tcd/ie/luom/LATimesLoader.java
+/opt/change/CS7IS3_Infomation_Retrieval_CA2/CS7IS3_A2/src/main/java/tcd/ie/luom/TopicsParser/Topic.java
+/opt/change/CS7IS3_Infomation_Retrieval_CA2/CS7IS3_A2/src/main/java/tcd/ie/luom/TestParser.java
+/opt/change/CS7IS3_Infomation_Retrieval_CA2/CS7IS3_A2/src/main/java/tcd/ie/luom/TopicsParser/TopicsParser.java

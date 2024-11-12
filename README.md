@@ -29,3 +29,12 @@ Or
 mvn clean compile
 mvn exec:java -Dexec.mainClass="tcd.ie.luom.IndexProgram"
 ```
+
+### To test TopicsParser
+
+```
+mvn clean compile
+mvn exec:java -Dexec.mainClass="tcd.ie.luom.TopicsParser"
+```
+
+Notice: the structure explanation of the parser is written in the TopicsParser directory.

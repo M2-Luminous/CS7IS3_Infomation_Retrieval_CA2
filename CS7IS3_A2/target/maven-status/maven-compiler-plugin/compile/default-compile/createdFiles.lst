@@ -1,5 +1,10 @@
+tcd/ie/luom/FTLoader.class
 tcd/ie/luom/FR94Loader.class
 tcd/ie/luom/DatasetLoader.class
+tcd/ie/luom/TopicsParser/TopicsParser.class
 tcd/ie/luom/IndexProgram.class
+tcd/ie/luom/TopicsParser/Topic.class
 tcd/ie/luom/FBISLoader.class
+tcd/ie/luom/TestParser.class
 tcd/ie/luom/LATimesLoader.class
+tcd/ie/luom/TopicsParser/TopicsWrapper.class
