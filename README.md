@@ -16,4 +16,16 @@ sudo apt install unzip -y
 
 4. unzip 'Assignment Two'.zip
 
+### To run 
 
+```
+mvn package clean
+java -jar target/CS7IS3_A2-1.1.jar
+```
+
+Or 
+
+```
+mvn clean compile
+mvn exec:java -Dexec.mainClass="tcd.ie.luom.IndexProgram"
+```
