@@ -43,10 +43,11 @@ public class IndexProgram {
             }
 
             // Initialize indexing for each dataset sequentially
+            // print
+            indexDataset(FT_LOCATION, new FTLoader(), analyzer, similarity, true);
             indexDataset(LATIMES_LOCATION, new LATimesLoader(), analyzer, similarity, true);
             indexDataset(FR94_LOCATION, new FR94Loader(), analyzer, similarity, false);
             indexDataset(FBIS_LOCATION, new FBISLoader(), analyzer, similarity, false);
-            indexDataset(FT_LOCATION, new FTLoader(), analyzer, similarity, false);
 
             LOGGER.info("Indexing completed successfully for all datasets.");
 
