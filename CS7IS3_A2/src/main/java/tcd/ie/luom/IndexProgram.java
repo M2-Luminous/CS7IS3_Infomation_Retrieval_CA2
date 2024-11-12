@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import tcd.ie.luom.FR94Loader;
 import tcd.ie.luom.FBISLoader;
 import tcd.ie.luom.LATimesLoader;
+import tcd.ie.luom.FTLoader;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class IndexProgram {
     private static final String FR94_LOCATION = "dataset/fr94/";
     private static final String FBIS_LOCATION = "dataset/fbis/";
     private static final String LATIMES_LOCATION = "dataset/latimes/";
+    private static final String FT_LOCATION = "dataset/ft/";
 
     public static void main(String[] args) {
         try {
@@ -44,6 +46,7 @@ public class IndexProgram {
             indexDataset(LATIMES_LOCATION, new LATimesLoader(), analyzer, similarity, true);
             indexDataset(FR94_LOCATION, new FR94Loader(), analyzer, similarity, false);
             indexDataset(FBIS_LOCATION, new FBISLoader(), analyzer, similarity, false);
+            indexDataset(FT_LOCATION, new FTLoader(), analyzer, similarity, false);
 
             LOGGER.info("Indexing completed successfully for all datasets.");
 
