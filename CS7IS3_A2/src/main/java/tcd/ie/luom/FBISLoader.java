@@ -48,7 +48,7 @@ public class FBISLoader implements DatasetLoader {
                 fedRegisterDocList.add(createLuceneDocument(docno, text, title));
             }
         }
-        System.out.println("Loading Fbis Done!");
+        System.out.println("Loading FBIS Done!");
         return fedRegisterDocList;
     }
 
