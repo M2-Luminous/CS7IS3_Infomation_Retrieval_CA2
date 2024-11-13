@@ -36,7 +36,7 @@ public class FTLoader implements DatasetLoader {
         File[] subdirs = ftDir.listFiles(File::isDirectory);
         if (subdirs != null) {
             for (File subdir : subdirs) {
-                LOGGER.info("Processing directory: {}", subdir.getName());
+                // LOGGER.info("Processing directory: {}", subdir.getName());
                 File[] files = subdir.listFiles();
                 if (files != null) {
                     for (File file : files) {

@@ -20,6 +20,7 @@ import tcd.ie.luom.FTLoader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 
 public class IndexProgram {
@@ -42,9 +43,9 @@ public class IndexProgram {
                 org.apache.commons.io.FileUtils.deleteDirectory(indexDir); // Clean up old index
             }
 
-            // Initialize indexing for each dataset sequentially
+            // Initialize indexing for each dataset sequentially with batching
             indexDataset(FT_LOCATION, new FTLoader(), analyzer, similarity, true);
-            indexDataset(LATIMES_LOCATION, new LATimesLoader(), analyzer, similarity, true);
+            indexDataset(LATIMES_LOCATION, new LATimesLoader(), analyzer, similarity, false);
             indexDataset(FR94_LOCATION, new FR94Loader(), analyzer, similarity, false);
             indexDataset(FBIS_LOCATION, new FBISLoader(), analyzer, similarity, false);
 
@@ -56,32 +57,47 @@ public class IndexProgram {
     }
 
     private static void indexDataset(String datasetLocation, DatasetLoader loader, Analyzer analyzer, BM25Similarity similarity, boolean isFirstDataset) throws IOException {
-		LOGGER.info("Starting to index dataset at location: {}", datasetLocation);
+        LOGGER.info("Starting to index dataset at location: {}", datasetLocation);
 
-		OpenMode openMode = isFirstDataset ? OpenMode.CREATE : OpenMode.APPEND;
+        OpenMode openMode = isFirstDataset ? OpenMode.CREATE : OpenMode.APPEND;
+        int batchSize = 50000;
 
-		try (Directory dir = FSDirectory.open(Paths.get(INDEX_LOCATION))) {
-			IndexWriterConfig config = new IndexWriterConfig(analyzer);
-			config.setOpenMode(openMode);
-			config.setSimilarity(similarity);
+        try (Directory dir = FSDirectory.open(Paths.get(INDEX_LOCATION))) {
+            IndexWriterConfig config = new IndexWriterConfig(analyzer);
+            config.setOpenMode(openMode);
+            config.setSimilarity(similarity);
 
-			try (IndexWriter indexWriter = new IndexWriter(dir, config)) {
-				//LOGGER.info("Calling loader.load() for datasetLocation: {}", datasetLocation);
-				List<Document> documents = loader.load(datasetLocation);
-				//LOGGER.info("Returned from loader.load() with {} documents", documents.size());
+            try (IndexWriter indexWriter = new IndexWriter(dir, config)) {
+                List<Document> batch = new ArrayList<>(batchSize);
 
-				if (!documents.isEmpty()) {
-					indexWriter.addDocuments(documents);
-					LOGGER.info("Successfully indexed {} documents from {}", documents.size(), datasetLocation);
-				} else {
-					LOGGER.warn("No documents found to index in {}", datasetLocation);
-				}
-			}
-		}
-	}
+                // Load documents from loader
+                List<Document> documents = loader.load(datasetLocation);
+                for (Document doc : documents) {
+                    batch.add(doc);
+
+                    // When batch is full, index and commit it, then clear the batch to release memory
+                    if (batch.size() >= batchSize) {
+                        indexWriter.addDocuments(batch);
+                        indexWriter.commit();  // Commit the batch to free memory
+                        // LOGGER.info("Indexed batch of {} documents from {}", batch.size(), datasetLocation);
+                        batch.clear();  // Clear batch for next chunk
+                    }
+                }
+
+                // Commit any remaining documents in the batch
+                if (!batch.isEmpty()) {
+                    indexWriter.addDocuments(batch);
+                    indexWriter.commit();
+                    // LOGGER.info("Indexed final batch of {} documents from {}", batch.size(), datasetLocation);
+                }
+
+                LOGGER.info("Successfully indexed documents from {}", datasetLocation);
+            }
+        }
+    }
 }
 
-// Define DatasetLoader as an interface for each specific loader to implement
+// DatasetLoader interface remains unchanged
 interface DatasetLoader {
     List<Document> load(String pathToDataset) throws IOException;
 }
