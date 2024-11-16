@@ -38,3 +38,10 @@ mvn exec:java -Dexec.mainClass="tcd.ie.luom.TopicsParser"
 ```
 
 Notice: the structure explanation of the parser is written in the TopicsParser directory.
+
+### To test Searcher
+
+```
+mvn clean compile
+mvn exec:java -Dexec.mainClass="tcd.ie.luom.Searcher"
+```
