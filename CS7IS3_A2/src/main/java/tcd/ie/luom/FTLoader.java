@@ -68,22 +68,22 @@ public class FTLoader implements DatasetLoader {
 
             // Extract and add required fields
             // Using StringField for fields that shouldn't be tokenized
-            addField(luceneDoc, "DOCNO", doc.select("DOCNO").text(), true);
-            addField(luceneDoc, "PROFILE", doc.select("PROFILE").text(), true);
+            addField(luceneDoc, "docno", doc.select("DOCNO").text(), true);
+            addField(luceneDoc, "profile", doc.select("PROFILE").text(), true);
 
             // Parse and format the date
             String dateText = doc.select("DATE").text().trim();
-            addField(luceneDoc, "DATE", dateText, true);
+            addField(luceneDoc, "date", dateText, true);
 
             // Using TextField for fields that should be tokenized
-            addField(luceneDoc, "HEADLINE", doc.select("HEADLINE").text(), false);
-            addField(luceneDoc, "BYLINE", doc.select("BYLINE").text(), false);
-            addField(luceneDoc, "DATELINE", doc.select("DATELINE").text(), false);
-            addField(luceneDoc, "TEXT", doc.select("TEXT").text(), false);
+            addField(luceneDoc, "headline", doc.select("HEADLINE").text(), false);
+            addField(luceneDoc, "byline", doc.select("BYLINE").text(), false);
+            addField(luceneDoc, "dateline", doc.select("DATELINE").text(), false);
+            addField(luceneDoc, "text", doc.select("TEXT").text(), false);
 
             // Publication information
-            addField(luceneDoc, "PUB", doc.select("PUB").text(), true);
-            addField(luceneDoc, "PAGE", doc.select("PAGE").text(), true);
+            addField(luceneDoc, "pub", doc.select("PUB").text(), true);
+            addField(luceneDoc, "page", doc.select("PAGE").text(), true);
 
             documents.add(luceneDoc);
         }

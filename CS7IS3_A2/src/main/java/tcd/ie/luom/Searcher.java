@@ -67,7 +67,7 @@ public class Searcher {
             TopicsParser topicParser = new TopicsParser();
             List<Topic> topics = topicParser.parse("dataset/topics");
             QueryParser parser = new MultiFieldQueryParser(new String[]{"headline", "text"}, analyzer, boost);
-            PrintWriter writer = new PrintWriter(new File(RESULT_LOCATION + "result.txt"), "UTF-8");
+            PrintWriter writer = new PrintWriter(new File(RESULT_LOCATION + "results.txt"), "UTF-8");
             for (Topic topic : topics) {
                 BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 	            Query title = parser.parse(topic.getTitle());
@@ -95,7 +95,7 @@ public class Searcher {
 
 		        for (int i = 0; i < hits.length; i++)
 		        {
-		        	writer.println(topic.getNum() + " 0 " + indexSearcher.doc(hits[i].doc).get("docno") + " " + i + " " + hits[i].score + " STANDARD");
+		        	writer.println(topic.getNum() + " Q0 " + indexSearcher.doc(hits[i].doc).get("docno") + " " + (i+1) + " " + hits[i].score + " STANDARD");
 		        }
             }
             writer.close();

@@ -51,15 +51,15 @@ public class LATimesLoader implements DatasetLoader  {
             Document luceneDoc = new Document();
 
             // Extracting key fields and adding to Lucene Document
-            addField(luceneDoc, "DOCNO", doc.select("DOCNO").text(), true);
-            addField(luceneDoc, "DOCID", doc.select("DOCID").text(), true);
-            addField(luceneDoc, "DATE", doc.select("DATE P").text(), true);
-            addField(luceneDoc, "SECTION", doc.select("SECTION P").text(), true);
-            addField(luceneDoc, "HEADLINE", doc.select("HEADLINE P").text(), false);
-            addField(luceneDoc, "BYLINE", doc.select("BYLINE P").text(), false);
-            addField(luceneDoc, "TEXT", doc.select("TEXT P").text(), false);
+            addField(luceneDoc, "docno", doc.select("DOCNO").text(), true);
+            addField(luceneDoc, "docid", doc.select("DOCID").text(), true);
+            addField(luceneDoc, "date", doc.select("DATE P").text(), true);
+            addField(luceneDoc, "section", doc.select("SECTION P").text(), true);
+            addField(luceneDoc, "headline", doc.select("HEADLINE P").text(), false);
+            addField(luceneDoc, "byline", doc.select("BYLINE P").text(), false);
+            addField(luceneDoc, "text", doc.select("TEXT P").text(), false);
 
-            // Add the document to the index
+	    // Add the document to the index
             ret.add(luceneDoc);
         }
 	return ret;
