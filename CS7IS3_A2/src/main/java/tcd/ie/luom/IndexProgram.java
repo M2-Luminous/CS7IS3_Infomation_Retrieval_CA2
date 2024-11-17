@@ -2,26 +2,29 @@ package tcd.ie.luom;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tcd.ie.luom.FR94Loader;
-import tcd.ie.luom.FBISLoader;
-import tcd.ie.luom.LATimesLoader;
-import tcd.ie.luom.FTLoader;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+
+
+interface DatasetLoader {
+    List<Document> load(String pathToDataset) throws IOException;
+}
 
 public class IndexProgram {
 
@@ -33,30 +36,32 @@ public class IndexProgram {
     private static final String FT_LOCATION = "dataset/ft/";
 
     public static void main(String[] args) {
+        // Keep this for direct execution if needed
+    }
+
+    public static void indexDatasets(String analyzerChoice, Similarity similarityModel) {
         try {
-            Analyzer analyzer = new EnglishAnalyzer();
-            BM25Similarity similarity = new BM25Similarity();
+            Analyzer analyzer = getAnalyzer(analyzerChoice);
 
             // Clean up old index if it exists
             File indexDir = new File(INDEX_LOCATION);
             if (indexDir.exists()) {
-                org.apache.commons.io.FileUtils.deleteDirectory(indexDir); // Clean up old index
+                org.apache.commons.io.FileUtils.deleteDirectory(indexDir);
             }
 
             // Initialize indexing for each dataset sequentially with batching
-            indexDataset(FT_LOCATION, new FTLoader(), analyzer, similarity, true);
-            indexDataset(LATIMES_LOCATION, new LATimesLoader(), analyzer, similarity, false);
-            indexDataset(FR94_LOCATION, new FR94Loader(), analyzer, similarity, false);
-            indexDataset(FBIS_LOCATION, new FBISLoader(), analyzer, similarity, false);
+            indexDataset(FT_LOCATION, new FTLoader(), analyzer, similarityModel, true);
+            indexDataset(LATIMES_LOCATION, new LATimesLoader(), analyzer, similarityModel, false);
+            indexDataset(FR94_LOCATION, new FR94Loader(), analyzer, similarityModel, false);
+            indexDataset(FBIS_LOCATION, new FBISLoader(), analyzer, similarityModel, false);
 
             LOGGER.info("Indexing completed successfully for all datasets.");
-
         } catch (IOException e) {
             LOGGER.error("Error during indexing", e);
         }
     }
 
-    private static void indexDataset(String datasetLocation, DatasetLoader loader, Analyzer analyzer, BM25Similarity similarity, boolean isFirstDataset) throws IOException {
+    private static void indexDataset(String datasetLocation, DatasetLoader loader, Analyzer analyzer, Similarity similarity, boolean isFirstDataset) throws IOException {
         LOGGER.info("Starting to index dataset at location: {}", datasetLocation);
 
         OpenMode openMode = isFirstDataset ? OpenMode.CREATE : OpenMode.APPEND;
@@ -70,34 +75,28 @@ public class IndexProgram {
             try (IndexWriter indexWriter = new IndexWriter(dir, config)) {
                 List<Document> batch = new ArrayList<>(batchSize);
 
-                // Load documents from loader
                 List<Document> documents = loader.load(datasetLocation);
                 for (Document doc : documents) {
                     batch.add(doc);
 
-                    // When batch is full, index and commit it, then clear the batch to release memory
                     if (batch.size() >= batchSize) {
                         indexWriter.addDocuments(batch);
-                        indexWriter.commit();  // Commit the batch to free memory
-                        // LOGGER.info("Indexed batch of {} documents from {}", batch.size(), datasetLocation);
-                        batch.clear();  // Clear batch for next chunk
+                        indexWriter.commit();
+                        batch.clear();
                     }
                 }
 
-                // Commit any remaining documents in the batch
                 if (!batch.isEmpty()) {
                     indexWriter.addDocuments(batch);
                     indexWriter.commit();
-                    // LOGGER.info("Indexed final batch of {} documents from {}", batch.size(), datasetLocation);
                 }
 
                 LOGGER.info("Successfully indexed documents from {}", datasetLocation);
             }
         }
     }
-}
 
-// DatasetLoader interface remains unchanged
-interface DatasetLoader {
-    List<Document> load(String pathToDataset) throws IOException;
+    private static Analyzer getAnalyzer(String analyzerChoice) {
+        return "en".equals(analyzerChoice) ? new EnglishAnalyzer() : new StandardAnalyzer();
+    }
 }
