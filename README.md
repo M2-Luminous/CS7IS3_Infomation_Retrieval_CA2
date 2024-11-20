@@ -27,17 +27,27 @@ Or
 
 ```
 mvn clean compile
-mvn exec:java -Dexec.mainClass="tcd.ie.luom.IndexProgram"
+mvn exec:java -Dexec.mainClass="tcd.ie.luom.MainProgram"
 ```
 
-### To test TopicsParser
+### Indexed Files
+
+```
+cd /CS7IS3_A2/Index
+```
+
+### Result Files
+
+```
+cd /CS7IS3_A2/result
+```
+
+### To test Indexer
 
 ```
 mvn clean compile
-mvn exec:java -Dexec.mainClass="tcd.ie.luom.TestParser"
+mvn exec:java -Dexec.mainClass="tcd.ie.luom.IndexProgram"
 ```
-
-Notice: the structure explanation of the parser is written in the TopicsParser directory.
 
 ### To test Searcher
 
