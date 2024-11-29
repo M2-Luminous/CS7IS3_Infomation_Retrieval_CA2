@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -69,23 +71,38 @@ public class Searcher {
 
                     // Process narrative
                     List<String> narrativeParts = splitNarrative(topic.getNarr());
-                    if (!narrativeParts.get(0).isEmpty()) {
-                        Query relevantNarrative = parser.parse(QueryParser.escape(narrativeParts.get(0)));
-                        booleanQuery.add(new BoostQuery(relevantNarrative, 1.2f), BooleanClause.Occur.SHOULD);
+                    String relevantNarrative = narrativeParts.get(0).trim();
+                    String irrelevantNarrative = narrativeParts.get(1).trim();
+
+                    if (!relevantNarrative.isEmpty()) {
+                        Query relNarr = parser.parse(QueryParser.escape(relevantNarrative));
+                        booleanQuery.add(new BoostQuery(relNarr, 1.2f), BooleanClause.Occur.SHOULD);
                     }
-                    if (!narrativeParts.get(1).isEmpty()) {
-                        Query irrelevantNarrative = parser.parse(QueryParser.escape(narrativeParts.get(1)));
-                        booleanQuery.add(new BoostQuery(irrelevantNarrative, 2.0f), BooleanClause.Occur.FILTER);
+                    if (!irrelevantNarrative.isEmpty()) {
+                        Query irrNarr = parser.parse(QueryParser.escape(irrelevantNarrative));
+                        booleanQuery.add(new BoostQuery(irrNarr, 2.0f), BooleanClause.Occur.FILTER);
                     }
 
                     // Execute search
                     ScoreDoc[] hits = indexSearcher.search(booleanQuery.build(), MAX_RESULTS).scoreDocs;
 
+                    // Track seen docno to avoid duplicates
+                    Set<String> seenDocnos = new HashSet<>();
+
+                    // Write results
                     for (int i = 0; i < hits.length; i++) {
                         Document doc = indexSearcher.doc(hits[i].doc);
+                        String docno = doc.get("docno");
+
+                        // Skip duplicate docnos
+                        if (seenDocnos.contains(docno)) {
+                            continue;
+                        }
+                        seenDocnos.add(docno);
+
                         writer.printf("%s Q0 %s %d %f STANDARD%n",
                                 topic.getNum(),
-                                doc.get("docno"),
+                                docno,
                                 (i + 1),
                                 hits[i].score);
                     }
