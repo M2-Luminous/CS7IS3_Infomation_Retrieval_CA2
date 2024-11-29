@@ -33,63 +33,64 @@ import java.io.PrintWriter;
 public class Searcher {
 
     private static final String INDEX_LOCATION = "Index";
-    private static int MAX_RESULTS = 1000;
-
-    public static void main(String[] args) {
-        // Keep this for direct execution if needed
-    }
+    private static final int MAX_RESULTS = 1000;
 
     public static void searchWithConfig(String analyzerChoice, Similarity similarityModel, String resultFileName) {
         try {
             Analyzer analyzer = getAnalyzer(analyzerChoice);
 
-            Directory dir = FSDirectory.open(Paths.get(INDEX_LOCATION));
-            IndexReader indexReader = DirectoryReader.open(dir);
-            IndexSearcher indexSearcher = new IndexSearcher(indexReader);
-            indexSearcher.setSimilarity(similarityModel);
+            try (Directory dir = FSDirectory.open(Paths.get(INDEX_LOCATION));
+                 IndexReader indexReader = DirectoryReader.open(dir);
+                 PrintWriter writer = new PrintWriter(new File(resultFileName), "UTF-8")) {
 
-            TopicsParser topicParser = new TopicsParser();
-            List<Topic> topics = topicParser.parse("dataset/topics");
+                IndexSearcher indexSearcher = new IndexSearcher(indexReader);
+                indexSearcher.setSimilarity(similarityModel);
 
-            Map<String, Float> boost = new HashMap<>();
-            QueryParser parser = new MultiFieldQueryParser(new String[]{"headline", "text"}, analyzer, boost);
+                TopicsParser topicParser = new TopicsParser();
+                List<Topic> topics = topicParser.parse("dataset/topics");
 
-            try (PrintWriter writer = new PrintWriter(new File(resultFileName), "UTF-8")) {
+                Map<String, Float> fieldBoosts = createFieldBoostMap();
+                QueryParser parser = new MultiFieldQueryParser(new String[]{"headline", "text"}, analyzer, fieldBoosts);
+
                 for (Topic topic : topics) {
                     BooleanQuery.Builder booleanQuery = new BooleanQuery.Builder();
 
-                    Query title = parser.parse(topic.getTitle());
-                    booleanQuery.add(new BoostQuery(title, 4f), BooleanClause.Occur.SHOULD);
-
-                    Query description = parser.parse(topic.getDesc());
-                    booleanQuery.add(new BoostQuery(description, 2f), BooleanClause.Occur.SHOULD);
-
-                    String narrative = topic.getNarr();
-                    BreakIterator iterator = BreakIterator.getSentenceInstance();
-                    iterator.setText(narrative);
-                    int index = 0;
-                    while (iterator.next() != BreakIterator.DONE) {
-                        String sentence = narrative.substring(index, iterator.current());
-                        if (sentence.length() > 0) {
-                            Query narrativeQuery = parser.parse(parser.escape(sentence));
-                            if (!sentence.contains("not relevant") && !sentence.contains("irrelevant")) {
-                                booleanQuery.add(new BoostQuery(narrativeQuery, 1.4f), BooleanClause.Occur.SHOULD);
-                            } else {
-                                booleanQuery.add(new BoostQuery(narrativeQuery, 2f), BooleanClause.Occur.FILTER);
-                            }
-                        }
-                        index = iterator.current();
+                    // Boost title
+                    if (!topic.getTitle().isEmpty()) {
+                        Query title = parser.parse(QueryParser.escape(topic.getTitle()));
+                        booleanQuery.add(new BoostQuery(title, 4.0f), BooleanClause.Occur.SHOULD);
                     }
 
+                    // Boost description
+                    if (!topic.getDesc().isEmpty()) {
+                        Query description = parser.parse(QueryParser.escape(topic.getDesc()));
+                        booleanQuery.add(new BoostQuery(description, 1.7f), BooleanClause.Occur.SHOULD);
+                    }
+
+                    // Process narrative
+                    List<String> narrativeParts = splitNarrative(topic.getNarr());
+                    if (!narrativeParts.get(0).isEmpty()) {
+                        Query relevantNarrative = parser.parse(QueryParser.escape(narrativeParts.get(0)));
+                        booleanQuery.add(new BoostQuery(relevantNarrative, 1.2f), BooleanClause.Occur.SHOULD);
+                    }
+                    if (!narrativeParts.get(1).isEmpty()) {
+                        Query irrelevantNarrative = parser.parse(QueryParser.escape(narrativeParts.get(1)));
+                        booleanQuery.add(new BoostQuery(irrelevantNarrative, 2.0f), BooleanClause.Occur.FILTER);
+                    }
+
+                    // Execute search
                     ScoreDoc[] hits = indexSearcher.search(booleanQuery.build(), MAX_RESULTS).scoreDocs;
 
                     for (int i = 0; i < hits.length; i++) {
-                        writer.println(topic.getNum() + " Q0 " + indexSearcher.doc(hits[i].doc).get("docno") + " " + (i + 1) + " " + hits[i].score + " STANDARD");
+                        Document doc = indexSearcher.doc(hits[i].doc);
+                        writer.printf("%s Q0 %s %d %f STANDARD%n",
+                                topic.getNum(),
+                                doc.get("docno"),
+                                (i + 1),
+                                hits[i].score);
                     }
                 }
             }
-
-            indexReader.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -97,5 +98,36 @@ public class Searcher {
 
     private static Analyzer getAnalyzer(String analyzerChoice) {
         return "en".equals(analyzerChoice) ? new EnglishAnalyzer() : new StandardAnalyzer();
+    }
+
+    private static Map<String, Float> createFieldBoostMap() {
+        Map<String, Float> boostMap = new HashMap<>();
+        boostMap.put("headline", 0.08f);
+        boostMap.put("text", 0.92f);
+        return boostMap;
+    }
+
+    private static List<String> splitNarrative(String narrative) {
+        StringBuilder relevantNarr = new StringBuilder();
+        StringBuilder irrelevantNarr = new StringBuilder();
+        List<String> splitParts = new ArrayList<>();
+
+        BreakIterator bi = BreakIterator.getSentenceInstance();
+        bi.setText(narrative);
+        int index = 0;
+
+        while (bi.next() != BreakIterator.DONE) {
+            String sentence = narrative.substring(index, bi.current()).trim();
+            if (sentence.contains("not relevant") || sentence.contains("irrelevant")) {
+                irrelevantNarr.append(sentence.replaceAll("not|NOT|irrelevant", "")).append(" ");
+            } else {
+                relevantNarr.append(sentence).append(" ");
+            }
+            index = bi.current();
+        }
+
+        splitParts.add(relevantNarr.toString().trim());
+        splitParts.add(irrelevantNarr.toString().trim());
+        return splitParts;
     }
 }
